@@ -7,7 +7,7 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 |-------|-------|--------|
 | 0 | Foundation: Docker, deps, env, PDF, extraction dump, cleaning rules drafted | DONE |
 | 1 | Walking skeleton: schema + migration, naive ingest, `npm run ask` end to end, baseline | BUILT, awaiting live run: needs a real `GEMINI_API_KEY` in `.env.local`, then `npm run ingest` and `npm run ask` (no Gemini call has been made) |
-| 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | NOT STARTED |
+| 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | BUILT + live run done (uncommitted); awaiting user review of sample chunks |
 | 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | NOT STARTED |
 | 4 | API route + chat UI with sources | NOT STARTED |
 | 5 | Hardening: compose e2e, audit, README | NOT STARTED |
@@ -19,6 +19,17 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 - Confirmed from docs: model IDs and embed call shape (D-37, D-38). Impl notes in D-39.
 - Environment note: Docker Desktop context (`desktop-linux`) was not running; used `DOCKER_HOST=unix:///var/run/docker.sock` for this session only. The `task-1_pgdata` volume was created fresh.
 - Next: set real key, run `npm run ingest` then ask the 3 acceptance questions and record the baseline.
+
+## 2026-10-14 (Phase 2)
+- Built: `src/lib/rag/clean.ts`, sentence-aware `chunk.ts`, idempotent `scripts/ingest.mts` (D-41..D-44). No new dependencies, no migration.
+- Checks (throwaway script, deleted): 15 unit checks pass (glued header, edge vs table numbers, hyphen join, dashes/quotes, abbreviations/decimals in sentence splitting, overlap, long sentences, no digit token created/altered on all 79 pages, known facts present).
+- Live ingest: 82 pages -> 79 kept (dropped 2 empty, 29 empty, 33 TOC) -> 265 chunks (chars min 67, avg 716, max 899). Second run skipped as designed.
+- Re-run of the 3 acceptance questions (top-5, same model) vs Phase 1 baseline: all still CORRECT.
+  1. Libraries: 166, pages 5, 21. Top similarity 0.830 -> 0.828 (same).
+  2. FDsys: govinfo; beta Dec 2017; FDsys retired Dec 2018. Cited pages 10, 22, 39 -> 8, 10, 22, 39. Top similarity 0.666 -> 0.679 (still the weakest).
+  3. Procurement: ">$375 million" (page 5) and now also "$375.7 million" (page 17, verified against the raw text). Top similarity 0.808 -> 0.805.
+- Surprises: first implementation left `|` separators and mid-page page numbers in chunks (fixed, D-41); heading-only chunks dropped (D-42); a sentence crossing a page break is cut at the boundary (9 pages start with a lowercase chunk).
+- Open: `npm audit` still not reviewed. Next: user reviews sample chunks, commit Phase 2, then Phase 3 (eval harness).
 
 ## 2026-10-14 (Phase 1 live run)
 - Ingest: 82 pages -> 249 chunks stored (naive 900-char chunks, no cleaning). Needed retry fix for the free-tier 429 (D-40).

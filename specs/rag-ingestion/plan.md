@@ -21,10 +21,11 @@ Why first: surfaces integration risks early (model IDs, pgvector, dimensions, ra
 
 ## Phase 2 - Quality ingestion
 Goal: better chunks, safe re-runs.
-- `clean` module: rules 1-8 from `cleaning-rules.md` (D-33) + safety check on known facts.
-- Sentence-aware chunker with overlap, PDF page kept per chunk (D-34, D-35); header text "title + page" embedded (D-19).
-- Transactional replace per document, hash + config skip (D-18).
-- Spot-check column reading order (open question C); review sample chunks together.
+- [x] `clean` module: rules 1-8 from `cleaning-rules.md` (D-33) + safety check on known facts (`src/lib/rag/clean.ts`).
+- [x] Sentence-aware chunker with overlap, PDF page kept per chunk (D-34, D-35); header text "title + page" embedded (D-19).
+- [x] Transactional replace per document, hash + config skip, `--force` (D-18, D-43).
+- [x] Spot-check column reading order (D-44).
+- [ ] Review sample chunks together with the user.
 Exit: re-ingest is idempotent; the 3 questions re-run and compared to the Phase 1 baseline.
 
 ## Phase 3 - Evaluation harness

@@ -1,4 +1,4 @@
-# Cleaning rules (APPROVED 2026-10-14: A, B, D accepted as recommended; C pending spot check)
+# Cleaning rules (APPROVED 2026-10-14: A, B, D accepted as recommended; C resolved by spot check, see D-44; implementation refinements in D-41)
 
 Based on `data/extracted/raw-pages.txt` (82 pages). Each rule cites what was observed. Nothing here is
 implemented yet. Rules run per page, in this order, so page numbers survive into chunks.
@@ -28,3 +28,8 @@ losing content.
   before we trust rule 5.
 - D. Financial statement pages are mostly tables of bare numbers; they will chunk poorly. Keep them in the
   index or exclude? (Not needed for the acceptance questions.)
+
+## Implementation notes (2026-10-14, D-41)
+- Header removal runs per line; a leftover bare 1-3 digit segment on a line that held a header is dropped too (glued printed page number), and stray `|` separators are removed.
+- Reflow also joins `digit-` and `/` line ends without a space.
+- Pages dropped on the real PDF: 2 (empty), 29 (header only), 33 (TOC).

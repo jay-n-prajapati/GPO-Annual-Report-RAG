@@ -1,0 +1,86 @@
+{
+  "status": "DRAFT - pending user review (evidence per item in specs/rag-ingestion/eval-review.md)",
+  "notes": "expectedPages are PDF page indices (D-35). expectedAnswerContains strings are matched after normalizing case, whitespace and thousands separators. out-of-scope items expect exactly the refusal string.",
+  "items": [
+    {
+      "id": "g01-libraries",
+      "type": "fact",
+      "question": "How many depository libraries did GPO staff visit in FY 2018?",
+      "expectedAnswerContains": ["166"],
+      "expectedPages": [5, 21],
+      "evidence": "\"in FY 2018 GPO staff visited 166 depository libraries in 25 states\" (p5, p21)"
+    },
+    {
+      "id": "g02-govinfo",
+      "type": "fact",
+      "question": "What new digital system replaced FDsys, and when was it fully deployed?",
+      "expectedAnswerContains": ["govinfo", "December 2018"],
+      "expectedPages": [4, 10, 22],
+      "evidence": "p4: \"full-scale deployment of govinfo ... goal of retiring FDsys in December 2018\"; p22: \"FDsys was scheduled to be completely retired and replaced by govinfo in December 2018\""
+    },
+    {
+      "id": "g03-procurement",
+      "type": "fact",
+      "question": "How much did GPO procure in printing and information products in FY 2018 on behalf of federal agencies?",
+      "expectedAnswerContains": ["375"],
+      "expectedPages": [5, 14, 17],
+      "evidence": "p5: \"procured more than $375 million worth of printing and other information products in FY 2018\"; p14/p17 give $375.7 million (both contain 375)"
+    },
+    {
+      "id": "g04-copies-titles",
+      "type": "multi-fact",
+      "question": "How many titles and how many copies did GPO distribute to depository libraries in FY 2018?",
+      "expectedAnswerContains": ["802,834", "4,211"],
+      "expectedPages": [5, 15, 19],
+      "evidence": "p5: \"GPO distributed 802,834 copies of 4,211 titles to depository libraries nationwide in FY 2018\""
+    },
+    {
+      "id": "g05-webinars",
+      "type": "multi-fact",
+      "question": "How many FDLP Academy webinars did GPO host in FY 2018, and how many participants did those programs serve?",
+      "expectedAnswerContains": ["85", "10,000"],
+      "expectedPages": [5],
+      "evidence": "p5: \"over 85 FDLP Academy webinars ... served more than 10,000 participants in FY 2018\""
+    },
+    {
+      "id": "g06-revenue-fy2017",
+      "type": "trap",
+      "question": "What were GPO's operating revenues in FY 2017?",
+      "expectedAnswerContains": ["874.3"],
+      "expectedPages": [26, 43],
+      "evidence": "p26: \"Operating revenues were $874.5 million in FY 2018 and $874.3 million in FY 2017\" (near-duplicate figure trap: the FY 2018 value is 874.5)"
+    },
+    {
+      "id": "g07-operating-expenses",
+      "type": "numeric",
+      "question": "What were GPO's operating expenses in FY 2018?",
+      "expectedAnswerContains": ["825.3"],
+      "expectedPages": [26, 44],
+      "evidence": "p26: \"operating expenses increased $4.1 million or .5 percent (to $825.3 million from $821.2 million)\""
+    },
+    {
+      "id": "g08-congressional-record",
+      "type": "numeric",
+      "question": "How many Congressional Record pages did GPO produce in FY 2018?",
+      "expectedAnswerContains": ["47,623,312"],
+      "expectedPages": [14],
+      "evidence": "p14 table: \"Congressional Record pages produced 47,623,312\""
+    },
+    {
+      "id": "g09-oos-fy2019",
+      "type": "out-of-scope",
+      "question": "How many Congressional Record pages did GPO produce in FY 2019?",
+      "expectedAnswerContains": ["Not in the document."],
+      "expectedPages": [],
+      "evidence": "Near-miss: only the FY 2018 figure exists (p14). Searched raw text: no FY 2019 Congressional Record page count."
+    },
+    {
+      "id": "g10-oos-world-knowledge",
+      "type": "out-of-scope",
+      "question": "What is the capital of France?",
+      "expectedAnswerContains": ["Not in the document."],
+      "expectedPages": [],
+      "evidence": "Pure outside-knowledge test. Searched raw text: no mention of France or Paris."
+    }
+  ]
+}

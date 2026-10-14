@@ -30,10 +30,10 @@ Exit: re-ingest is idempotent; the 3 questions re-run and compared to the Phase 
 
 ## Phase 3 - Evaluation harness
 Goal: replace "by eye" with repeatable numbers.
-- Draft 8-10 golden questions with expected values and PDF pages from the document, incl. 2 out-of-scope (D-28); user reviews.
-- `npm run eval`: string-match expected facts, check the exact refusal on out-of-scope, report retrieval hit (right page in top-k) separately from answer correctness.
-- `RAG_DEBUG=1` logging of query, chunk IDs, pages, scores (D-31).
-- Tune chunk size, overlap, top-k using the harness. Decide hybrid search / similarity cutoff only if data shows a need (D-23, D-24).
+- [x] Draft 8-10 golden questions with expected values and PDF pages from the document, incl. 2 out-of-scope (D-28). [ ] User review (`eval-review.md`).
+- [x] `npm run eval` built (string-match facts, exact refusal, retrieval hit reported separately, `--retrieval-only`). [x] Retrieval-only run: 8/8. [ ] Full eval with chat (blocked by daily chat quota, D-48).
+- [x] `RAG_DEBUG=1` logging of query, chunk IDs, pages, scores (D-31).
+- [ ] Tune chunk size, overlap, top-k using the harness (not before golden set approved + full eval run, D-49). Decide hybrid search / similarity cutoff only if data shows a need (D-23, D-24).
 Exit: documented eval scores; acceptance questions pass; refusal cases pass.
 
 ## Phase 4 - API + UI

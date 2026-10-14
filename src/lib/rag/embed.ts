@@ -3,7 +3,8 @@ import { env } from "../env";
 import { EMBED_BATCH_SIZE, EMBEDDING_MODEL } from "./config";
 import { EMBEDDING_DIMENSIONS } from "../db/schema";
 
-export const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+// A hung request would otherwise block a whole ingest/eval run; time out and let withRetry try again.
+export const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY, httpOptions: { timeout: 60_000 } });
 
 // gemini-embedding-001 only returns unit-length vectors at 3072 dims, so we normalize ourselves (D-20).
 export function l2Normalize(v: number[]): number[] {
@@ -12,6 +13,8 @@ export function l2Normalize(v: number[]): number[] {
 }
 
 const MAX_ATTEMPTS = 8;
+// A short wait is a per-minute limit worth retrying; hours means the daily free-tier quota is gone.
+const MAX_SERVER_WAIT_MS = 2 * 60_000;
 
 // 429 responses say how long to wait ("retryDelay":"27s"); honor it instead of guessing.
 function serverRetryDelayMs(err: unknown): number {
@@ -25,10 +28,15 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
       return await fn();
     } catch (err) {
       const status = (err as { status?: number }).status;
-      const retryable = status === 429 || (status !== undefined && status >= 500);
+      const name = (err as { name?: string }).name;
+      const timedOut = name === "AbortError" || name === "TimeoutError";
+      const retryable = timedOut || status === 429 || (status !== undefined && status >= 500);
       if (!retryable || attempt >= MAX_ATTEMPTS) throw err;
+      if (serverRetryDelayMs(err) > MAX_SERVER_WAIT_MS) {
+        throw new Error(`Gemini quota exhausted (server asks to wait ${Math.round(serverRetryDelayMs(err) / 60_000)} min): ${String((err as Error).message).slice(0, 300)}`);
+      }
       const delay = Math.max(1000 * 2 ** (attempt - 1), serverRetryDelayMs(err)) + Math.random() * 250;
-      console.warn(`Gemini ${status}, retry ${attempt}/${MAX_ATTEMPTS - 1} in ${Math.round(delay)}ms`);
+      console.warn(`Gemini ${status ?? name}, retry ${attempt}/${MAX_ATTEMPTS - 1} in ${Math.round(delay)}ms`);
       await new Promise((r) => setTimeout(r, delay));
     }
   }

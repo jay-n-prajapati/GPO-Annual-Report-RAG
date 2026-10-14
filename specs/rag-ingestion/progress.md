@@ -6,11 +6,18 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 | Phase | Scope | Status |
 |-------|-------|--------|
 | 0 | Foundation: Docker, deps, env, PDF, extraction dump, cleaning rules drafted | DONE |
-| 1 | Walking skeleton: schema + migration, naive ingest, `npm run ask` end to end, baseline | BUILT, awaiting live run: needs a real `GEMINI_API_KEY` in `.env.local`, then `npm run ingest` and `npm run ask` (no Gemini call has been made) |
-| 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | BUILT + live run done (uncommitted); awaiting user review of sample chunks |
-| 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | NOT STARTED |
+| 1 | Walking skeleton: schema + migration, naive ingest, `npm run ask` end to end, baseline | DONE (commit dcd5ee0) |
+| 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | DONE (commit 5209768) |
+| 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | BUILT (uncommitted). Golden set DRAFT awaiting user review; retrieval-only eval run (8/8 hit); full eval with chat NOT run (daily chat quota exhausted, D-48); tuning NOT started |
 | 4 | API route + chat UI with sources | NOT STARTED |
 | 5 | Hardening: compose e2e, audit, README | NOT STARTED |
+
+## 2026-10-14 (Phase 3 build)
+- Built: `src/lib/rag/answer.ts` (shared retrieve/answer), thin `scripts/ask.mts`, `evals/golden.json` (10 items, DRAFT), `specs/rag-ingestion/eval-review.md` (evidence per item), `scripts/eval.mts` + `npm run eval`, retry fail-fast + request timeout in `embed.ts`. Decisions D-45..D-49.
+- Run results (retrieval-only, top-5, 265 chunks, no tuning): retrieval hit 8/8 in-scope. Top similarity: g01 0.828, g02 0.679 (weakest), g03 0.805, g04 0.816, g05 0.835, g06 0.797, g07 0.829, g08 0.796; out-of-scope g09 0.772 (near-miss, retrieves the FY 2018 figure on p14), g10 0.524.
+- NOT run: full eval with chat (correctness, refusal, faithfulness). Free-tier chat quota for `gemini-3.8-flash` is 20 requests/day and was exhausted; two earlier eval attempts hung because the retry slept on the server's ~19h wait (fixed, D-48). No full eval result exists yet.
+- Pending: user review of the golden set; chat quota decision (wait ~19h, enable billing, or switch model); then one full eval run; only then tuning (D-49).
+- Open: `npm audit` still not reviewed.
 
 ## 2026-10-14 (Phase 1 build)
 - Built: `src/lib/env.ts`, Drizzle schema + `drizzle.config.ts` + migration `drizzle/0000_*.sql`, `src/lib/rag/{config,chunk,embed}.ts`, `scripts/ingest.mts`, `scripts/ask.mts`; npm scripts `db:generate`, `db:migrate`, `ingest`, `ask`.

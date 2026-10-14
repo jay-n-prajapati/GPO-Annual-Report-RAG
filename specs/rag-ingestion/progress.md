@@ -9,7 +9,7 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 | 1 | Walking skeleton: schema + migration, naive ingest, `npm run ask` end to end, baseline | DONE (commit dcd5ee0) |
 | 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | DONE (commit 5209768) |
 | 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | BUILT (uncommitted). Golden set DRAFT awaiting user review; retrieval-only eval run (8/8 hit); full eval with chat NOT run (daily chat quota exhausted, D-48); tuning NOT started |
-| 4 | API route + chat UI with sources | NOT STARTED |
+| 4 | API route + chat UI with sources | BUILT; live generation untested pending chat quota reset (D-50). Error/quota path and mocked-stream UI verified |
 | 5 | Hardening: compose e2e, audit, README | NOT STARTED |
 
 ## 2026-10-14 (Phase 3 build)
@@ -37,6 +37,14 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
   3. Procurement: ">$375 million" (page 5) and now also "$375.7 million" (page 17, verified against the raw text). Top similarity 0.808 -> 0.805.
 - Surprises: first implementation left `|` separators and mid-page page numbers in chunks (fixed, D-41); heading-only chunks dropped (D-42); a sentence crossing a page break is cut at the boundary (9 pages start with a lowercase chunk).
 - Open: `npm audit` still not reviewed. Next: user reviews sample chunks, commit Phase 2, then Phase 3 (eval harness).
+
+## 2026-10-15 (Phase 4 build)
+- Built: `streamAnswer`, `POST /api/ask` (NDJSON, D-51), chat page (`src/app/page.tsx`, `src/components/{ask-panel,answer,sources}.tsx`, `src/lib/{ask-client,ask-protocol,refusal}.ts`), new theme in `globals.css`, fonts in `layout.tsx` (D-54..D-57).
+- Verified: tsc, lint, `npm run build` (standalone) clean; client bundle contains no drizzle/postgres/genai/API-key strings. curl against dev server: invalid/empty/too-long/wrong-type bodies -> 400 JSON; valid question -> `sources` event then clean `quota` error event (real quota exhaustion). Retry budget fixed after the first attempt took 2.2 min (D-53), now ~5 s.
+- Visually verified with headless Chrome over CDP (desktop light/dark, mobile, searching, quota error with sources open/closed, cite-click highlight, refusal stamp light/dark). The streaming-answer and refusal screens used a MOCKED stream injected in the page; they exercise the UI only, not the model.
+- NOT verified: real streamed generation from Gemini, Docker image build of the app service, keyboard/screen-reader behavior beyond markup review.
+- Side effect: `next dev` generated an untracked `AGENTS.md` at the repo root (Next 16.4 agent rules; disable with `agentRules: false` in next.config). Left in place for the user to decide.
+- Next: after the chat quota resets, run the full eval once and the 3 questions in the browser; then Phase 5.
 
 ## 2026-10-14 (Phase 1 live run)
 - Ingest: 82 pages -> 249 chunks stored (naive 900-char chunks, no cleaning). Needed retry fix for the free-tier 429 (D-40).

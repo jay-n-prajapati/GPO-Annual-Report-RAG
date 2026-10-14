@@ -22,7 +22,13 @@ function serverRetryDelayMs(err: unknown): number {
   return m ? Math.ceil(Number(m[1]) * 1000) + 1000 : 0;
 }
 
-export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+export type RetryOptions = { maxAttempts?: number; maxServerWaitMs?: number };
+
+// Scripts use the defaults (patient); a web request passes a small budget so users aren't left waiting minutes.
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  { maxAttempts = MAX_ATTEMPTS, maxServerWaitMs = MAX_SERVER_WAIT_MS }: RetryOptions = {},
+): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
       return await fn();
@@ -31,12 +37,12 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
       const name = (err as { name?: string }).name;
       const timedOut = name === "AbortError" || name === "TimeoutError";
       const retryable = timedOut || status === 429 || (status !== undefined && status >= 500);
-      if (!retryable || attempt >= MAX_ATTEMPTS) throw err;
-      if (serverRetryDelayMs(err) > MAX_SERVER_WAIT_MS) {
+      if (!retryable || attempt >= maxAttempts) throw err;
+      if (serverRetryDelayMs(err) > maxServerWaitMs) {
         throw new Error(`Gemini quota exhausted (server asks to wait ${Math.round(serverRetryDelayMs(err) / 60_000)} min): ${String((err as Error).message).slice(0, 300)}`);
       }
       const delay = Math.max(1000 * 2 ** (attempt - 1), serverRetryDelayMs(err)) + Math.random() * 250;
-      console.warn(`Gemini ${status ?? name}, retry ${attempt}/${MAX_ATTEMPTS - 1} in ${Math.round(delay)}ms`);
+      console.warn(`Gemini ${status ?? name}, retry ${attempt}/${maxAttempts - 1} in ${Math.round(delay)}ms`);
       await new Promise((r) => setTimeout(r, delay));
     }
   }
@@ -45,16 +51,19 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
 export async function embedTexts(
   texts: string[],
   taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
+  retry?: RetryOptions,
 ): Promise<number[][]> {
   const out: number[][] = [];
   for (let i = 0; i < texts.length; i += EMBED_BATCH_SIZE) {
     const batch = texts.slice(i, i + EMBED_BATCH_SIZE);
-    const res = await withRetry(() =>
-      ai.models.embedContent({
-        model: EMBEDDING_MODEL,
-        contents: batch,
-        config: { taskType, outputDimensionality: EMBEDDING_DIMENSIONS },
-      }),
+    const res = await withRetry(
+      () =>
+        ai.models.embedContent({
+          model: EMBEDDING_MODEL,
+          contents: batch,
+          config: { taskType, outputDimensionality: EMBEDDING_DIMENSIONS },
+        }),
+      retry,
     );
     const vectors = res.embeddings?.map((e) => e.values ?? []) ?? [];
     if (vectors.length !== batch.length || vectors.some((v) => v.length !== EMBEDDING_DIMENSIONS)) {

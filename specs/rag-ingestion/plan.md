@@ -38,8 +38,11 @@ Exit: documented eval scores; acceptance questions pass; refusal cases pass.
 
 ## Phase 4 - API + UI
 Goal: usable chat page.
-- Route handler: zod-validated body, streamed answer, returns sources (D-27).
-- One page with shadcn: question input, streamed answer, collapsible sources panel (chunks, pages, scores). Apply `frontend-design` and `vercel-react-best-practices`.
+- [x] `streamAnswer` in `src/lib/rag/answer.ts` (same prompt/config as `answerQuestion`).
+- [x] `POST /api/ask` route handler: zod-validated body, NDJSON stream (sources, text, done/error), clean error mapping (D-51..D-53).
+- [x] One page: question input, streamed answer, collapsible sources panel (chunks, pages, scores), refusal + quota states (D-54..D-57). Applied `frontend-design` and `vercel-react-best-practices`.
+- [x] `npm run build` (standalone) passes; no server deps in the client bundle.
+- [ ] LIVE streamed generation in the browser (blocked by the daily chat quota, D-50).
 Exit: acceptance questions answered in the browser with visible sources.
 
 ## Phase 5 - Hardening

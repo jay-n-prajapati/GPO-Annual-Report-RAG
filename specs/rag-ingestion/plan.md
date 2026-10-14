@@ -9,7 +9,7 @@ Status lives in `progress.md`. Decision IDs refer to `specs/decisions.md`.
 Docker (pgvector db + app), packages, `.env.local`, PDF in `data/`, `npm run dump:pdf`, cleaning rules drafted.
 Exit: raw text extracted; decisions D-01..D-36 recorded.
 
-## Phase 1 - Walking skeleton (thin end-to-end, CLI only)
+## Phase 1 - Walking skeleton (thin end-to-end, CLI only) - BUILT, awaiting live run with API key
 Goal: ask one question from the terminal and get a cited answer from the stored PDF, however crude.
 - `src/lib/env.ts` (zod-validated env).
 - `src/lib/db/schema.ts` (`documents`, `chunks` with `vector(768)`), `drizzle.config.ts`, first migration, HNSW index; `npm run db:migrate`.

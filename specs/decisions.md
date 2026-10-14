@@ -43,9 +43,12 @@ Format: `D-NN | date | area | decision | why | status`
 | D-34 | 2026-10-14 | Chunking | Chunker is sentence-aware, not paragraph-aware (extraction has no paragraph breaks); pack sentences to ~800-1000 chars with ~15% overlap | Refines D-16 | Active (refines D-16) |
 | D-35 | 2026-10-14 | Citations | Cite the PDF page index (not the printed page number) | Matches the page counter in any PDF viewer | Active |
 | D-36 | 2026-10-14 | Financial pages | Keep financial-statement pages in the index for now; revisit if the eval shows they hurt retrieval | Not needed for acceptance questions; measure before excluding | Active |
+| D-37 | 2026-10-14 | Chat model | Confirmed against ai.google.dev/gemini-api/docs/models: chat model ID `gemini-3.8-flash` (stable, "most intelligent Flash", recommended for general text); alternatives `gemini-3.6-flash`, `gemini-3.5-flash-lite`. Stored as `CHAT_MODEL` in `src/lib/rag/config.ts` | Resolves open item from D-21 | Active |
+| D-38 | 2026-10-14 | Embedding API | Confirmed: `ai.models.embedContent({ model: "gemini-embedding-001", contents: string[], config: { taskType, outputDimensionality: 768 } })`; response `embeddings[].values`; `RETRIEVAL_DOCUMENT` for chunks, `RETRIEVAL_QUERY` for questions; docs state non-3072 dimensions must be normalized manually, so we L2-normalize in `src/lib/rag/embed.ts` | Resolves open item from D-20 | Active |
+| D-39 | 2026-10-14 | Phase 1 impl | Scripts are `.mts` run by `tsx --env-file=.env.local` (relative imports, no `@/` alias in scripts); drizzle-kit runs via `node --env-file=.env.local node_modules/drizzle-kit/bin.cjs`; identity integer PKs; `chunks.page` = PDF page index; HNSW `vector_cosine_ops` index + btree on `document_id`; first migration in committed `drizzle/`. Phase 1 ingest always replaces the document's chunks (hash and config are stored but not yet used to skip; skipping is Phase 2) | Keep Phase 1 minimal; no new dependencies added | Active |
+| D-40 | 2026-10-14 | Reliability | Retry helper honors the server's `retryDelay` on 429 (max 8 attempts) and is also used for the chat call (503 "high demand" seen live). Free-tier embedding quota is 100 requests/min and appears to count each text in a batch, so ingesting 249 chunks takes a few minutes with retries | First live ingest failed with the earlier 5-attempt / ~15s backoff | Active |
 
 ## Open questions
-- Exact Gemini Flash model ID (confirm on the models page).
 - `npm audit` warnings after install were not reviewed.
 - Chunk size/overlap and top-k values to be tuned against the eval set once it exists.
 - Column reading order (cleaning-rules open question C): spot-check a few pages after rule 5 is implemented.

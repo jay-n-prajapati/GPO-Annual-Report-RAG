@@ -46,8 +46,8 @@ Goal: usable chat page.
 Exit: acceptance questions answered in the browser with visible sources.
 
 ## Phase 5 - Hardening
-- Full compose run (db + app) within resource limits; `npm audit` review; README (setup, ingest, eval).
-- Revisit D-36 (financial pages) and any deferred decisions with eval data.
+- [x] Full compose run (db + app) within resource limits (D-59); [x] `npm audit` review (D-58); [x] README (setup, ingest, eval).
+- [ ] Revisit D-36 (financial pages) and any deferred decisions with eval data (waits for the eval, D-49/D-50).
 Exit: fresh clone -> documented commands -> working app.
 
 ## Cross-cutting rules

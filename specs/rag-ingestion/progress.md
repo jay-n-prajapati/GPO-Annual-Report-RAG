@@ -10,14 +10,14 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 | 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | DONE (commit 5209768) |
 | 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | BUILT (uncommitted). Golden set DRAFT awaiting user review; retrieval-only eval run (8/8 hit); full eval with chat NOT run (daily chat quota exhausted, D-48); tuning NOT started |
 | 4 | API route + chat UI with sources | BUILT; live generation untested pending chat quota reset (D-50). Error/quota path and mocked-stream UI verified |
-| 5 | Hardening: compose e2e, audit, README | NOT STARTED |
+| 5 | Hardening: compose e2e, audit, README | PARTIAL: audit, Docker e2e and README done (D-58, D-59); revisit-with-eval items (D-36 financial pages, similarity cutoff, hybrid search, tuning) pending the eval |
 
 ## 2026-10-14 (Phase 3 build)
 - Built: `src/lib/rag/answer.ts` (shared retrieve/answer), thin `scripts/ask.mts`, `evals/golden.json` (10 items, DRAFT), `specs/rag-ingestion/eval-review.md` (evidence per item), `scripts/eval.mts` + `npm run eval`, retry fail-fast + request timeout in `embed.ts`. Decisions D-45..D-49.
 - Run results (retrieval-only, top-5, 265 chunks, no tuning): retrieval hit 8/8 in-scope. Top similarity: g01 0.828, g02 0.679 (weakest), g03 0.805, g04 0.816, g05 0.835, g06 0.797, g07 0.829, g08 0.796; out-of-scope g09 0.772 (near-miss, retrieves the FY 2018 figure on p14), g10 0.524.
 - NOT run: full eval with chat (correctness, refusal, faithfulness). Free-tier chat quota for `gemini-3.8-flash` is 20 requests/day and was exhausted; two earlier eval attempts hung because the retry slept on the server's ~19h wait (fixed, D-48). No full eval result exists yet.
 - Pending: user review of the golden set; chat quota decision (wait ~19h, enable billing, or switch model); then one full eval run; only then tuning (D-49).
-- Open: `npm audit` still not reviewed.
+- `npm audit`: reviewed in Phase 5 (D-58).
 
 ## 2026-10-14 (Phase 1 build)
 - Built: `src/lib/env.ts`, Drizzle schema + `drizzle.config.ts` + migration `drizzle/0000_*.sql`, `src/lib/rag/{config,chunk,embed}.ts`, `scripts/ingest.mts`, `scripts/ask.mts`; npm scripts `db:generate`, `db:migrate`, `ingest`, `ask`.
@@ -36,7 +36,7 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
   2. FDsys: govinfo; beta Dec 2017; FDsys retired Dec 2018. Cited pages 10, 22, 39 -> 8, 10, 22, 39. Top similarity 0.666 -> 0.679 (still the weakest).
   3. Procurement: ">$375 million" (page 5) and now also "$375.7 million" (page 17, verified against the raw text). Top similarity 0.808 -> 0.805.
 - Surprises: first implementation left `|` separators and mid-page page numbers in chunks (fixed, D-41); heading-only chunks dropped (D-42); a sentence crossing a page break is cut at the boundary (9 pages start with a lowercase chunk).
-- Open: `npm audit` still not reviewed. Next: user reviews sample chunks, commit Phase 2, then Phase 3 (eval harness).
+- `npm audit`: reviewed in Phase 5 (D-58). Next: user reviews sample chunks, commit Phase 2, then Phase 3 (eval harness).
 
 ## 2026-10-15 (Phase 4 build)
 - Built: `streamAnswer`, `POST /api/ask` (NDJSON, D-51), chat page (`src/app/page.tsx`, `src/components/{ask-panel,answer,sources}.tsx`, `src/lib/{ask-client,ask-protocol,refusal}.ts`), new theme in `globals.css`, fonts in `layout.tsx` (D-54..D-57).
@@ -53,7 +53,7 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
   2. FDsys replacement: govinfo; moved out of beta Dec 2017; FDsys scheduled to be retired/replaced Dec 2018 (pages 10, 22, 39). CORRECT, faithful to the text, which says "scheduled" (top similarity 0.666, the weakest retrieval of the three).
   3. Procurement: "more than $375 million" (page 5). CORRECT (top similarity 0.808). The text also gives $375.7 million elsewhere (pages ~25).
 - Observation: the Q2 answer cites pages (10, 22, 39) while the top similarity is only 0.666; watch it in Phase 2/3.
-- Open: `npm audit` still not reviewed.
+- `npm audit`: reviewed in Phase 5 (D-58).
 - Next: Phase 2 quality ingestion. Commit Phase 1 first (uncommitted in working tree).
 
 ## 2026-10-14

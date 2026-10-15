@@ -7,6 +7,8 @@ type Item = {
   type: "fact" | "multi-fact" | "trap" | "numeric" | "out-of-scope";
   question: string;
   expectedAnswerContains: string[];
+  expectedAnswerContainsAny?: string[]; // at least one must appear
+  expectedAnswerNotContains?: string[]; // none may appear
   expectedPages: number[];
 };
 
@@ -66,12 +68,22 @@ for (const [i, item] of items.entries()) {
       ? null
       : oos
         ? answer.trim() === REFUSAL
-        : item.expectedAnswerContains.every((s) => norm(answer).includes(norm(s))),
+        : isCorrect(item, answer),
     unsupported: unsupportedNumbers(answer, hits.map((h) => h.content)),
     answer,
     pages,
     topScore: hits[0]?.score ?? 0,
   });
+}
+
+function isCorrect(item: Item, answer: string): boolean {
+  const a = norm(answer);
+  const has = (s: string) => a.includes(norm(s));
+  return (
+    item.expectedAnswerContains.every(has) &&
+    (!item.expectedAnswerContainsAny || item.expectedAnswerContainsAny.some(has)) &&
+    !(item.expectedAnswerNotContains ?? []).some(has)
+  );
 }
 
 const mark = (v: boolean | null) => (v === null ? "  -" : v ? " ok" : "FAIL");

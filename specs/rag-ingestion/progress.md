@@ -8,9 +8,29 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 | 0 | Foundation: Docker, deps, env, PDF, extraction dump, cleaning rules drafted | DONE |
 | 1 | Walking skeleton: schema + migration, naive ingest, `npm run ask` end to end, baseline | DONE (commit dcd5ee0) |
 | 2 | Quality ingestion: clean + sentence-aware chunker + idempotent re-runs | DONE (commit 5209768) |
-| 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | BUILT (uncommitted). Golden set DRAFT awaiting user review; retrieval-only eval run (8/8 hit); full eval with chat NOT run (daily chat quota exhausted, D-48); tuning NOT started |
-| 4 | API route + chat UI with sources | BUILT; live generation untested pending chat quota reset (D-50). Error/quota path and mocked-stream UI verified |
-| 5 | Hardening: compose e2e, audit, README | PARTIAL: audit, Docker e2e and README done (D-58, D-59); revisit-with-eval items (D-36 financial pages, similarity cutoff, hybrid search, tuning) pending the eval |
+| 3 | Eval harness: golden set, `npm run eval`, debug logging, tuning | DONE 2026-10-15: golden set approved, full eval 8/8 retrieval, 8/8 correct, 2/2 refusal, no tuning needed (D-62). Earlier note: BUILT (commit a66a394). Golden set DRAFT awaiting user review; retrieval-only eval run (8/8 hit); full eval with chat NOT run (daily chat quota exhausted, D-48); tuning NOT started |
+| 4 | API route + chat UI with sources | BUILT (commit e3e2907); live generation verified in the browser on 2026-10-15 (4 chat requests): streaming, citation chips, chip-click highlight, refusal stamp, light/dark all OK. One UI fix (markdown rendering, D-61) uncommitted |
+| 5 | Hardening: compose e2e, audit, README | PARTIAL (commit 259f28b): audit, Docker e2e and README done (D-58, D-59); revisit-with-eval items (D-36 financial pages, similarity cutoff, hybrid search, tuning) pending the eval |
+
+## 2026-10-15 (live browser test, plan step 2)
+- Chat quota HAD reset. Used exactly 4 chat requests (1 curl probe + 3 via the UI). Dev server + headless Chrome (CDP) driven by a scratchpad script; all processes stopped by PID afterwards.
+- Answers (top-5, same index of 265 chunks), compared with the Phase 1/2 baselines:
+  1. Libraries (curl): "In FY 2018, GPO staff visited 166 depository libraries (page 5, page 21)." Same as baseline.
+  2. FDsys: govinfo; moved out of beta Dec 2017; FDsys scheduled to be completely retired and replaced by govinfo in Dec 2018 (pages 8, 10, 22, 39). Top similarity 0.679 (unchanged weak spot). Same substance as baseline.
+  3. Procurement: "more than $375 million (valued at approximately $375.7 million)" (pages 5, 17). Top similarity 0.805. Same as Phase 2.
+  4. Out of scope (g09, "Congressional Record pages in FY 2019"): refusal "Not in the document." with the stamped verdict UI; retrieved FY 2018 chunk scored 0.772, so the prompt (not a score cutoff) did the refusing.
+- UI: sources event arrives at ~0.6 s (before generation), answer text then streams as several NDJSON chunks (q2: 4 increments in ~0.4 s) but the first answer token took 7-22 s (q2 hit two 503 retries, 1.2 s + 2.2 s; q3 7 s; oos 16 s), so generation latency is the dominant wait. Citation chips match the sources panel pages; chip click highlights the right excerpt (checked chunk ids 267 -> page 8 and 260 -> page 5 in the DB); refusal stamp, light and dark all render correctly; no console errors/exceptions in any run.
+- BUG found + fixed (D-61): answers contained raw markdown (`* **New system:** govinfo`) shown as literal asterisks. `src/components/answer.tsx` now renders `* ` bullets and `**bold**`. Verified with a mocked stream (no quota); needs its own commit.
+- Side effects to know: `next dev` regenerated an untracked `AGENTS.md` at the repo root again (D-57 note); it is not committed. Other uncommitted changes in the tree (golden.json, eval.mts, eval-review.md, decisions.md D-60) are from the golden-set review, not this task.
+- Not done (by design): `npm run eval`, tuning.
+- Next: full `npm run eval` (needs ~10 chat requests; 16 of 20 daily requests remain only if nothing else used them today).
+
+## 2026-10-15 (first full eval)
+- Golden set approved with g03/g06 tightened (D-60). Live browser test passed with real Gemini (4 chat requests, D-61 markdown rendering fix in the UI, uncommitted).
+- Full eval: retrieval hit 8/8, correct 8/8, refusal 2/2, 1 faithfulness warning (benign unit conversion on g06). Saved to `data/extracted/eval-latest.json` (git-ignored).
+- Tuning/cutoff/hybrid/financial-pages/min-chunk decisions closed with data: nothing added (D-62).
+- Use Case 1 meets its pass/fail bar on the golden set and the 3 acceptance questions.
+- Remaining optional: commit pending changes; larger stress set; theme toggle; AGENTS.md decision.
 
 ## 2026-10-14 (Phase 3 build)
 - Built: `src/lib/rag/answer.ts` (shared retrieve/answer), thin `scripts/ask.mts`, `evals/golden.json` (10 items, DRAFT), `specs/rag-ingestion/eval-review.md` (evidence per item), `scripts/eval.mts` + `npm run eval`, retry fail-fast + request timeout in `embed.ts`. Decisions D-45..D-49.

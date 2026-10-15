@@ -1,4 +1,4 @@
-# Golden set review (DRAFT, awaiting user approval)
+# Golden set review (APPROVED 2026-10-15 with g03/g06 tightened)
 
 File: `evals/golden.json`. Page numbers are PDF page indices (D-35), matching `data/extracted/raw-pages.txt`
 (`===== PAGE N =====`). Check each row by searching the PDF (or that file) for the quoted evidence.
@@ -20,14 +20,14 @@ Tuning (chunk size, top-k, prompt, cutoffs) does NOT start until you approve thi
 ## Judgment calls to review
 - g02: the document says FDsys was *scheduled* for retirement in December 2018, so "fully deployed" is
   answered by that date; the check is deliberately just `govinfo` + `December 2018`.
-- g03: "375" matches both $375 million and $375.7 million, because both are correct in the document.
-- g06 is the near-duplicate trap (FY 2017 = 874.3, FY 2018 = 874.5). String match alone cannot catch an answer
-  that quotes both years but attributes them wrongly; only the 874.3 presence is checked.
+- g03 (tightened on approval): the answer must contain "375 million" or "375.7" (both figures are correct in the document); a bare "375" substring no longer passes.
+- g06 is the near-duplicate trap (FY 2017 = 874.3, FY 2018 = 874.5). Tightened on approval: the answer must contain 874.3 and must NOT contain 874.5. Known limit: a correct answer that also mentions 874.5 as the FY 2018 figure would be marked a false fail; judge such a failure by hand.
 - Net income was avoided on purpose: the document gives several different "net income" figures
   ($20.4M, $52.6M, $58.9M) depending on exclusions, which would need a nuanced expected answer.
 - The refusal check is strict: the answer must equal `Not in the document.` after trimming.
 
 ## Matching rules
+Optional per-item fields: `expectedAnswerContainsAny` (at least one must appear) and `expectedAnswerNotContains` (none may appear).
 Case-insensitive, whitespace collapsed, thousands separators removed on both sides ("802,834" matches
 "802834"). The faithfulness hint flags numbers in the answer (page citations excluded) that appear in none
 of the retrieved chunks; it is a warning, not a failure.

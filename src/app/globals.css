@@ -7,11 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-fraunces), ui-serif, Georgia, serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
-  --font-heading: var(--font-fraunces), ui-serif, Georgia, serif;
-  --color-stamp: var(--stamp);
-  --color-paper: var(--card);
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-source-serif), ui-serif, Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,180 +49,52 @@
 }
 
 :root {
-  /* "Federal archive": warm newsprint + ink, vermilion stamp accent; flips to a night press in dark mode.
-     light-dark() keeps one set of tokens; .dark / .light classes can still force a scheme. */
-  color-scheme: light dark;
-  --background: light-dark(oklch(0.955 0.022 85), oklch(0.185 0.022 255));
-  --foreground: light-dark(oklch(0.2 0.02 60), oklch(0.93 0.025 85));
-  --card: light-dark(oklch(0.978 0.016 85), oklch(0.225 0.026 255));
-  --card-foreground: var(--foreground);
-  --popover: var(--card);
-  --popover-foreground: var(--foreground);
-  --primary: var(--foreground);
-  --primary-foreground: var(--background);
-  --secondary: light-dark(oklch(0.92 0.026 82), oklch(0.27 0.026 255));
-  --secondary-foreground: var(--foreground);
-  --muted: var(--secondary);
-  --muted-foreground: light-dark(oklch(0.44 0.03 70), oklch(0.75 0.03 85));
-  --accent: var(--secondary);
-  --accent-foreground: var(--foreground);
-  --stamp: light-dark(oklch(0.5 0.19 30), oklch(0.74 0.15 58));
-  --destructive: var(--stamp);
-  --border: light-dark(oklch(0.8 0.03 78), oklch(0.37 0.03 255));
-  --input: var(--border);
-  --ring: var(--stamp);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.25rem;
-  --sidebar: var(--card);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--foreground);
-  --sidebar-primary-foreground: var(--background);
-  --sidebar-accent: var(--secondary);
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
-}
-
-.dark {
+  /* Quiet research tool, dark only (D-63..). Standard shadcn tokens carry the whole palette:
+     primary = the single amber accent, sidebar = the darker side panels, chart-2 = the "ready" green. */
   color-scheme: dark;
-}
-
-.light {
-  color-scheme: light;
+  --background: #0f1012;
+  --foreground: #ebe9e4;
+  --card: #131418;
+  --card-foreground: #c9ccd0;
+  --popover: #1a1c21;
+  --popover-foreground: #ebe9e4;
+  --primary: #e6ac50;
+  --primary-foreground: #241704;
+  --secondary: #1a1c21;
+  --secondary-foreground: #ebe9e4;
+  --muted: #16171b;
+  --muted-foreground: #a3a29b;
+  --accent: #1a1c21;
+  --accent-foreground: #ebe9e4;
+  --destructive: #e59292;
+  --border: #202228;
+  --input: #2d3038;
+  --ring: #e6ac50;
+  --chart-1: #e6ac50;
+  --chart-2: #7fc29b;
+  --chart-3: #8fa7c4;
+  --chart-4: #c49a8f;
+  --chart-5: #74736c;
+  --radius: 0.3125rem;
+  --sidebar: #101114;
+  --sidebar-foreground: #ebe9e4;
+  --sidebar-primary: #e6ac50;
+  --sidebar-primary-foreground: #241704;
+  --sidebar-accent: #1a1c21;
+  --sidebar-accent-foreground: #ebe9e4;
+  --sidebar-border: #202228;
+  --sidebar-ring: #e6ac50;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    height: 100%;
   }
-  html {
-    @apply font-sans;
-  }
-}
-
-/* Paper grain: one static fixed layer, no animation. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  pointer-events: none;
-  opacity: 0.45;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-::selection {
-  background: var(--stamp);
-  color: var(--background);
-}
-
-h1,
-h2,
-h3 {
-  font-optical-sizing: auto;
-  font-variation-settings: "SOFT" 60, "WONK" 0;
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes thud {
-  0% {
-    opacity: 0;
-    transform: rotate(-9deg) scale(1.5);
-  }
-  60% {
-    opacity: 1;
-    transform: rotate(-3deg) scale(0.97);
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(-3deg) scale(1);
-  }
-}
-
-@keyframes caret {
-  50% {
-    opacity: 0;
-  }
-}
-
-@keyframes flash {
-  0%,
-  60% {
-    background: color-mix(in oklch, var(--stamp) 16%, transparent);
-  }
-  100% {
-    background: transparent;
-  }
-}
-
-@keyframes sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(250%);
-  }
-}
-
-.rise {
-  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: calc(var(--d, 0) * 90ms);
-}
-
-.stamp-in {
-  animation: thud 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) both;
-}
-
-.caret::after {
-  content: "";
-  display: inline-block;
-  width: 0.55ch;
-  height: 1.05em;
-  margin-left: 2px;
-  vertical-align: -0.15em;
-  background: var(--stamp);
-  animation: caret 1s steps(1) infinite;
-}
-
-.flash {
-  animation: flash 2.2s ease-out both;
-}
-
-.sweep::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 40%;
-  background: linear-gradient(90deg, transparent, var(--stamp), transparent);
-  animation: sweep 1.2s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rise,
-  .stamp-in,
-  .flash {
-    animation: none;
-  }
-  .caret::after,
-  .sweep::after {
-    animation: none;
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }

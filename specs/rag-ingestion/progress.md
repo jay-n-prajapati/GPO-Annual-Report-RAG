@@ -25,6 +25,17 @@ Update after each working session. Newest first. Phase details are in `plan.md`.
 - Not done (by design): `npm run eval`, tuning.
 - Next: full `npm run eval` (needs ~10 chat requests; 16 of 20 daily requests remain only if nothing else used them today).
 
+## 2026-10-15 (end-to-end: headless Chrome -> production Docker container -> real Gemini, with RAM measured)
+- Rebuilt `task-1-app` (235 MB image) from commit 7261c85 and ran the full compose stack; db untouched (265 chunks, not re-ingested). Exactly 3 chat requests, all answered (no quota error): libraries, FDsys/govinfo, g09 refusal. Headless Chrome 154 over CDP, temp profile, light-mode screenshot per question.
+- Results: Q1 "166 depository libraries", chips p5/p21. Q2 govinfo; out of beta Dec 2017; FDsys scheduled to be retired/replaced Dec 2018, chips p10/p22/p39, bullets render as bullets (no literal `**`/`* `). Q3 "Not in the document." as the stamped verdict (no chips).
+- Timings (poll of the answer region, ~100 ms resolution): sources visible 1.06 s / 0.55 s / 0.55 s; answer text first appears ~10.9 s (Q1, arrives in one chunk), ~5.5 s (Q2, then 5 increments over ~0.5 s), stamp at ~7.5 s (Q3). Generation latency dominates; sources are immediate.
+- Console errors: none in any run.
+- App container (limit 256 MiB, Node heap cap 192 MB): idle 34 MiB; 1 s sampler over the whole session min 34.3 / avg 43.7 / max 46.8 MiB; cgroup `memory.peak` 60.5 MiB (includes page cache and startup; it was 38.9 MiB before the run). 0 restarts, OOMKilled=false. CPU peak 36.9% of 1 CPU (page loads), at most ~10% during requests.
+- db container (limit 384 MiB): sampler min 38.9 / avg 46.4 / max 47.0 MiB; cgroup `memory.peak` 86.7 MiB is historical (set before this run, unchanged). 0 restarts, no OOM, CPU peak 12.6%.
+- Headless Chrome (the client, not part of the app footprint): ~1.2 GiB summed RSS over 14 processes (double counts shared pages).
+- Not measured: more than 3 requests or concurrent users; larger answers; sustained load. Memory is ~18% of the app limit and ~12% of the db limit, so the limits are comfortable; no change proposed.
+- Scratchpad (not repo): screenshots in `shots/e2e*`, sampler data `mem-samples.csv`.
+
 ## 2026-10-15 (first full eval)
 - Golden set approved with g03/g06 tightened (D-60). Live browser test passed with real Gemini (4 chat requests, D-61 markdown rendering fix in the UI, uncommitted).
 - Full eval: retrieval hit 8/8, correct 8/8, refusal 2/2, 1 faithfulness warning (benign unit conversion on g06). Saved to `data/extracted/eval-latest.json` (git-ignored).

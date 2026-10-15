@@ -1,99 +1,138 @@
-import { REFUSAL_TEXT, isRefusal } from "@/lib/refusal";
+import { parseCitations } from "@/lib/citations";
+import type { AskErrorCode } from "@/lib/ask-protocol";
 
-// "(page 5)", "(pages 10, 22, 39)", "(page 5, page 21)", "(p. 7)": the model cites PDF pages this way.
-const CITATION = /\(((?:pages?|pp?\.)\s*\d+(?:\s*(?:,|;|and|&|–|-)\s*(?:pages?\s*)?\d+)*)\)/gi;
-const DIGITS = /\d+/g;
-
-type Part = { text: string } | { pages: number[] };
-
-function parse(text: string): Part[] {
-  const parts: Part[] = [];
-  let last = 0;
-  for (const m of text.matchAll(CITATION)) {
-    const start = m.index ?? 0;
-    if (start > last) parts.push({ text: text.slice(last, start) });
-    parts.push({ pages: [...m[1].matchAll(DIGITS)].map((d) => Number(d[0])) });
-    last = start + m[0].length;
-  }
-  if (last < text.length) parts.push({ text: text.slice(last) });
-  return parts;
-}
-
-// The model sometimes answers with light markdown ("* " bullets, **bold**) despite the plain-text prompt;
+// The model sometimes answers with light markdown ("* " bullets, **bold**) despite the plain-text prompt (D-61);
 // render just those two instead of showing raw asterisks.
 const BOLD = /\*\*([^*]+)\*\*/g;
 
 function Inline({ text }: { text: string }) {
-  const pieces = text.replace(/^\*\s+/gm, "\u2022 ").split(BOLD);
+  const pieces = text.replace(/^\*\s+/gm, "• ").split(BOLD);
   return pieces.map((piece, i) => (i % 2 ? <strong key={i}>{piece}</strong> : piece));
 }
 
-const CHIP =
-  "mx-0.5 inline-block -rotate-1 border px-1.5 py-px align-[0.15em] font-mono text-[0.68em] font-semibold uppercase tracking-[0.12em]";
+type Node = { kind: "text"; text: string } | { kind: "cite"; pages: number[]; lead: string; trail: string };
 
-type Props = {
+// A citation chip is kept on the same line as the word before it and the punctuation after it,
+// so a line break can never strand a lone chip or period.
+function toNodes(paragraph: string): Node[] {
+  const nodes: Node[] = [];
+  let afterCite = false;
+  for (const part of parseCitations(paragraph)) {
+    if ("text" in part) {
+      let text = part.text;
+      if (afterCite) {
+        const punct = /^[.,;:)!?'’"”]+/.exec(text)?.[0] ?? "";
+        const last = nodes[nodes.length - 1];
+        if (punct && last.kind === "cite") {
+          last.trail = punct;
+          text = text.slice(punct.length);
+        }
+      }
+      if (text) nodes.push({ kind: "text", text });
+      afterCite = false;
+    } else {
+      let lead = "";
+      const prev = nodes[nodes.length - 1];
+      if (prev?.kind === "text") {
+        const word = /\S+\s*$/.exec(prev.text)?.[0] ?? "";
+        // Don't split a **bold** run in half.
+        if (word && !word.includes("*")) {
+          lead = word;
+          prev.text = prev.text.slice(0, prev.text.length - word.length);
+          if (!prev.text) nodes.pop();
+        }
+      }
+      nodes.push({ kind: "cite", pages: part.pages, lead, trail: "" });
+      afterCite = true;
+    }
+  }
+  return nodes;
+}
+
+type AnswerProps = {
   text: string;
   streaming: boolean;
-  sourcePages: ReadonlySet<number>;
+  retrieved: ReadonlySet<number>;
+  activePage: number | null;
   onCite: (page: number) => void;
 };
 
-export function Answer({ text, streaming, sourcePages, onCite }: Props) {
+export function Answer({ text, streaming, retrieved, activePage, onCite }: AnswerProps) {
+  const paragraphs = text.trim().split(/\n{2,}/);
   return (
-    <p className={`whitespace-pre-wrap text-[1.3rem] leading-[1.6] md:text-[1.45rem] ${streaming ? "caret" : ""}`}>
-      {parse(text.trimStart()).map((part, i) =>
-        "text" in part ? (
-          <span key={i}>
-            <Inline text={part.text} />
-          </span>
-        ) : (
-          <span key={i} className="whitespace-nowrap">
-            {part.pages.map((page) =>
-              sourcePages.has(page) ? (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => onCite(page)}
-                  aria-label={`Show the retrieved excerpt from PDF page ${page}`}
-                  className={`${CHIP} cursor-pointer border-stamp text-stamp transition-colors hover:bg-stamp hover:text-background focus-visible:bg-stamp focus-visible:text-background focus-visible:outline-none`}
-                >
-                  p. {page}
-                </button>
-              ) : (
-                <span
-                  key={page}
-                  title="This page was not among the retrieved excerpts"
-                  className={`${CHIP} border-dashed border-muted-foreground text-muted-foreground`}
-                >
-                  p. {page}
-                  <span className="sr-only"> (not among the retrieved excerpts)</span>
-                </span>
-              ),
-            )}
-          </span>
-        ),
-      )}
-    </p>
+    <div className="answer">
+      {paragraphs.map((paragraph, i) => (
+        <p key={i} className="para">
+          {toNodes(paragraph).map((node, j) =>
+            node.kind === "text" ? (
+              <Inline key={j} text={node.text} />
+            ) : (
+              <span key={j} className="nw">
+                {node.lead}
+                {node.pages.map((page) =>
+                  retrieved.has(page) ? (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => onCite(page)}
+                      aria-label={`Show the retrieved excerpt from PDF page ${page}`}
+                      className={`cite${activePage === page ? " is-linked" : ""}`}
+                    >
+                      p.{page}
+                    </button>
+                  ) : (
+                    <span key={page} className="cite off" title="This page was not among the retrieved excerpts">
+                      p.{page}
+                      <span className="sr-only"> (not among the retrieved excerpts)</span>
+                    </span>
+                  ),
+                )}
+                {node.trail}
+              </span>
+            ),
+          )}
+          {streaming && i === paragraphs.length - 1 ? <span className="caret" aria-hidden="true" /> : null}
+        </p>
+      ))}
+    </div>
   );
 }
 
-// "Not in the document." is a designed outcome, not an error: the system refusing to invent an answer.
-export function RefusalStamp({ text }: { text: string }) {
-  if (!isRefusal(text)) return null;
+// "Not in the document." is a designed outcome, not an error: the system declining to invent an answer.
+export function Verdict() {
   return (
-    <div className="py-4">
-      <div
-        role="img"
-        aria-label={REFUSAL_TEXT}
-        className="stamp-in inline-block border-[3px] border-double border-stamp px-6 py-4 text-stamp"
-      >
-        <p className="font-mono text-xl font-semibold uppercase tracking-[0.22em] md:text-3xl">Not in the document</p>
-        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em]">Nothing was invented · see sources</p>
-      </div>
-      <p className="mt-5 max-w-prose text-lg leading-relaxed text-muted-foreground">
-        The report does not answer this. Rather than guess, the system says so. Check the excerpts below to see what it
-        did find.
+    <div className="verdict">
+      <p className="verdict-t">Not in the document.</p>
+      <p className="verdict-s">
+        The report doesn&rsquo;t contain an answer to this question. The nearest passages it does contain are shown as
+        evidence, so you can judge for yourself.
       </p>
+    </div>
+  );
+}
+
+const ERROR_TITLE: Record<AskErrorCode, string> = {
+  quota: "Chat quota reached",
+  invalid: "Check the question",
+  unavailable: "Couldn’t finish the answer",
+  internal: "Couldn’t finish the answer",
+};
+
+type NoticeProps = { code: AskErrorCode; message: string; hasSources: boolean; onRetry: () => void };
+
+export function ErrorNotice({ code, message, hasSources, onRetry }: NoticeProps) {
+  return (
+    <div className="notice" role="alert">
+      <p className="notice-t">{ERROR_TITLE[code]}</p>
+      <p className="notice-s">
+        {message}
+        {hasSources ? " Retrieval worked, so the passages it found are still listed under Evidence." : ""}
+      </p>
+      {code !== "invalid" ? (
+        <button type="button" className="btn" onClick={onRetry}>
+          Try again
+        </button>
+      ) : null}
     </div>
   );
 }

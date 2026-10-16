@@ -30,10 +30,10 @@ the host and talk to the Dockerized database.
 
    ```
    GEMINI_API_KEY=your-gemini-api-key
-   POSTGRES_USER=postgres
+   POSTGRES_USER=task1
    POSTGRES_PASSWORD=change-me
-   POSTGRES_DB=app
-   DATABASE_URL=postgres://postgres:change-me@localhost:5432/app
+   POSTGRES_DB=task1_rag
+   DATABASE_URL=postgres://task1:change-me@localhost:5432/task1_rag
    ```
 
    Keep the password in `DATABASE_URL` in sync with `POSTGRES_PASSWORD`.
